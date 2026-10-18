@@ -1,5 +1,5 @@
 import { messages } from "@/lib/db";
-import { deleteMessageAction } from "./actions";
+import { deleteMessageAction } from "./actions.js";
 
 type Message = {
   id: string;

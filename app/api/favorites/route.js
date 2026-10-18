@@ -1,12 +1,16 @@
-import { favorites } from "@/lib/db";
-
+import {
+  createFavorite,
+  listFavorites,
+} from "@/lib/services/favoriteService";
+import { validateFavorite } from "@/lib/validations/favoriteValidation";
 
 export async function GET() {
-  return Response.json(favorites);
+  return Response.json(listFavorites());
 }
 
 export async function POST(request) {
   let body;
+
   try {
     body = await request.json();
   } catch {
@@ -16,25 +20,17 @@ export async function POST(request) {
     );
   }
 
-  if (!body || Object.keys(body).length === 0) {
-    return Response.json({ error: "Body tidak boleh kosong" }, { status: 400 });
-  }
-  if (typeof body.id !== "number") {
-    return Response.json(
-      { error: "id wajib diisi dan berupa angka" },
-      { status: 400 }
-    );
-  }
-  if (!body.name || typeof body.name !== "string") {
-    return Response.json({ error: "name wajib diisi" }, { status: 400 });
-  }
-  if (favorites.some((f) => f.id === body.id)) {
-    return Response.json(
-      { error: "User ini sudah difavoritkan" },
-      { status: 400 }
-    );
+  const validationError = validateFavorite(body);
+
+  if (validationError) {
+    return Response.json({ error: validationError }, { status: 400 });
   }
 
-  favorites.push(body);
-  return Response.json(body, { status: 201 });
+  const result = createFavorite(body);
+
+  if (result.error) {
+    return Response.json({ error: result.error }, { status: 400 });
+  }
+
+  return Response.json(result.data, { status: 201 });
 }

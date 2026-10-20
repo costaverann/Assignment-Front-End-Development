@@ -1,12 +1,11 @@
-import { favorites } from "@/lib/db";
+import {
+  editFavoriteNote,
+  removeFavorite,
+} from "@/lib/services/favoriteService";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
-  const favorite = favorites.find((f) => f.id === Number(id));
-
-  if (!favorite) {
-    return Response.json({ error: "Data tidak ditemukan" }, { status: 404 });
-  }
+  const numericId = Number(id);
 
   let body;
   try {
@@ -25,18 +24,22 @@ export async function PATCH(request, { params }) {
     );
   }
 
-  favorite.note = body.note;
-  return Response.json(favorite);
+  const result = editFavoriteNote(numericId, body.note);
+
+  if (result.error) {
+    return Response.json({ error: result.error }, { status: 404 });
+  }
+
+  return Response.json(result.data);
 }
 
 export async function DELETE(request, { params }) {
   const { id } = await params;
-  const index = favorites.findIndex((f) => f.id === Number(id));
+  const result = removeFavorite(Number(id));
 
-  if (index === -1) {
-    return Response.json({ error: "Data tidak ditemukan" }, { status: 404 });
+  if (result.error) {
+    return Response.json({ error: result.error }, { status: 404 });
   }
 
-  favorites.splice(index, 1);
   return Response.json({ message: "Berhasil dihapus" });
 }

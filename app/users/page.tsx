@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import UserCard from "../components/UserCard";
+import { Input } from "@/components/ui/input";
 
 type User = {
   id: number;
@@ -12,6 +13,7 @@ type User = {
 
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -20,9 +22,7 @@ export default function Users() {
 
     async function loadUsers() {
       try {
-        const response = await fetch(
-          "https://jsonplaceholder.typicode.com/users"
-        );
+        const response = await fetch("https://jsonplaceholder.typicode.com/users");
         if (!response.ok) throw new Error("Gagal memuat data user.");
 
         const data: User[] = await response.json();
@@ -40,6 +40,18 @@ export default function Users() {
     };
   }, []);
 
+  const filteredUsers = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    if (!keyword) return users;
+
+    return users.filter((user) =>
+      `${user.name} ${user.email} ${user.company.name}`
+        .toLowerCase()
+        .includes(keyword)
+    );
+  }, [users, search]);
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-20">
       <h1 className="mb-2 text-4xl font-bold text-foreground">
@@ -49,13 +61,28 @@ export default function Users() {
         Browse and search through registered users.
       </p>
 
+      <Input
+        type="search"
+        placeholder="Cari nama, email, atau perusahaan..."
+        aria-label="Cari user"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        className="mb-6 max-w-md"
+      />
+
       {loading && (
         <p className="mb-4 text-muted-foreground">Memuat data user...</p>
       )}
       {error && <p role="alert" className="mb-4 text-red-600">{error}</p>}
 
+      {!loading && !error && filteredUsers.length === 0 && (
+        <p className="mb-4 text-muted-foreground">
+          Tidak ada user yang cocok dengan pencarianmu.
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-3">
-        {users.map((user) => (
+        {filteredUsers.map((user) => (
           <UserCard key={user.id} user={user} />
         ))}
       </div>
